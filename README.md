@@ -2,7 +2,7 @@
 Connect amazon alexa vocie and ROS using alexa skill, lambda, pubnub
 
 
-# I wrtied detail description for setup.
+# I wrote detail description for setup.
 https://passionbull.net/2018/11/robot/connect-amazon-alexa-and-ros-using-alexa-skill-lambda-pubnub/
 https://passionbull.net/2018/11/robot/connect-amazon-alexa-vocie-and-ros-using-alexa-skill-lambda-pubnub-2/
 
