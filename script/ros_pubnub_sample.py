@@ -4,6 +4,10 @@ from pubnub.pubnub import PubNub
 from pubnub.callbacks import SubscribeCallback
 from pubnub.enums import PNOperationType, PNStatusCategory
 
+import rospy
+from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
+
 pnconfig = PNConfiguration()
 pnconfig.subscribe_key = "sub-c-xx"
 pnconfig.publish_key = "pub-c-xx"
@@ -14,6 +18,12 @@ presenceResult = None
 messageResult = None
 
 class MySubscribeCallback(SubscribeCallback):
+
+    def __init__(self):
+        self.alexa_pub = rospy.Publisher("alexa", String, queue_size = 1)
+        self.goal_pub = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size = 1)
+
+
     def status(self, pubnub, status):
         pass
         # The status object returned is always related to subscribe but could contain
@@ -66,16 +76,31 @@ class MySubscribeCallback(SubscribeCallback):
     def message(self, pubnub, message):
         global messageResult
         messageResult = message
-        print messageResult.message.get('action')
-        print messageResult.channel
-        pass  # handle incoming messages
- 
- 
-pubnub.add_listener(MySubscribeCallback())
+        message_str =str(messageResult.message.get('action'))
+        print message_str
+        # print messageResult.channel
 
-###subscribe
-pubnub.subscribe().channels('fiona').execute()
+        self.alexa_pub.publish(message_str)
+        #### it is for controll robot, not part of pubnub
+        if message_str =='4':
+            self.publish_goal(0,0)
+        if message_str =='6':
+            self.publish_goal(0.5,0)
 
+    #### it is for controll robot, not part of pubnub
+    def publish_goal(self, x,y):
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "map"
+        pose.pose.position.x = x
+        pose.pose.position.y = y
+        pose.pose.position.z = 0
+
+        pose.pose.orientation.x = 0
+        pose.pose.orientation.y = 0
+        pose.pose.orientation.z = 1
+        pose.pose.orientation.w = 0
+        self.goal_pub.publish(pose)
 
 ### publishing
 #from pubnub.exceptions import PubNubException
@@ -88,4 +113,16 @@ pubnub.subscribe().channels('fiona').execute()
 #except PubNubException as e:
 #    print e
 
+
+def run():
+    rospy.init_node('alexa_listener', anonymous=True)
+    pubnubSubscriber = MySubscribeCallback()
+    pubnub.add_listener(pubnubSubscriber)
+    ###subscribe
+    pubnub.subscribe().channels('fiona').execute()
+    while not rospy.is_shutdown():
+        rospy.spin()
+    pubnub.stop()
+    print('alexa_listener is finished')
+run()
 
